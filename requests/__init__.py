@@ -134,4 +134,4 @@ class Device(Resource):
 
 api.add_resource(UserFactory, '/register_user', resource_class_kwargs={'connection': connection})
 api.add_resource(User, '/user/<string:uuid_string>', resource_class_kwargs={'connection': connection})
-api.add_resource(Device, '/user/<string:uuid_string/devices>', resource_class_kwargs={'connection': connection})
+api.add_resource(Device, '/user/<string:uuid_string>/devices', resource_class_kwargs={'connection': connection})

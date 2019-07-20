@@ -96,8 +96,33 @@ Content-Type: application/json
 *Success*
 
 ```json
-HTTP/1.1
+HTTP/1.1 200
+
+{
+    "message": "value updated successfully"
+}
 ```
 
+*Failure*
 
+```json
+HTTP/1.1 4xx
 
+{
+    "message": "failed to update resource",
+    "error": "somecode"
+}
+```
+
+Provisional structure
+
+/register_user[/] - returns the user identifier for some user that just registered himself.
+    TODO: - Check for repeated calls and block. (One user register per IP per hour?)
+
+/user/<string:UUID> - root structure for a user. Unsure of whether or not this is an acessible URL
+
+/user/<string:UUID>/devices/ - root structure for the devices a user owns. Unsure if this is an acessible URL and it returns all the devices or whether devices/all should serve that purpose.
+
+/user/<string:UUID>/devices/<string:device_identifier> - returns the current status of the device queried
+
+TODO: revise the communication mechanisms through which the devices are notified to change their status and through which these communicate alterations in their status. Webhooks?
