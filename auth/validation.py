@@ -15,7 +15,7 @@ def authenticate(cursor, unique_id, token, secret):
             return (False, 'owner_no_token')
         else:
             #get the issue date for the token and if its been used yet from the database
-            token, date_issued = query_results
+            dbtoken, date_issued = query_results
 
             #parse the date string into a proper date structure
             date_issued = datetime.strptime(date_issued, "%d/%m/%y %H:%M:%S")
@@ -26,9 +26,11 @@ def authenticate(cursor, unique_id, token, secret):
             token_unique = data['owner_unique']
 
             #check if the token date corresponds with the database one and check if it's not been used already
-            if not token_date_issued == date_issued:
+            '''if not token_date_issued == date_issued:
                 return (False, 'token_invalid_date')
-            elif not token_unique == unique_id:
+            elif not token_unique == unique_id:'''
+                
+            if not dbtoken == token:
                 return (False, 'token_different_owner')
             else:
                 return (True, data['owner_unique'])
