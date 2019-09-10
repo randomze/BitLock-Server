@@ -1,118 +1,45 @@
-# User and lock register service
+#User service
 
-## Register a user
+To use the user service, the `Authorization` header is always required and it should be set as follows:
 
-**Definition**
+`Authorization: `
 
-`POST /register_user[/]`
+The response comes in json, with the `Content-Type` header properly set.
 
-**Required Headers**
+##Registering a user
 
-`Authorization: Basic <base64 encoded passowrd>`
+`POST /user/register_user[/]`
 
-**Response**
+The response fields available are:
 
-*Success*
+`message` - contains a summary of the result of the operation
+`uuid_string` - the user identifier, which is to be used from here on out. Only returned on **success**
+`error_code` - the error code which specifies why the operation failed. Only returned on **failure**
 
+##Deleting a user
 
-```json
-HTTP/1.1 201 Created
-Content-Type: application/json
+`DELETE /user/<string:UUID>`
 
-{
-    message: "user created successfully",
-    uuid: "some uuid"
-}
-```
+The response fields available are:
 
-*Failure*
+`message` - contains a summary of the result of the operation
+`error_code` - the error code which specifies why the operation failed. Only returned on **failure**
 
-```json
-HTTP/1.1 400 Bad Request
-Content-Type: application/json
+##Non-specified URL's
 
-{
-    message: "something went wrong while creating the user related to the request",
-    error: "some-code perhaps"
-}
-```
-## Get devices under a users control
+In case you were to try acessing a URL which is not one of the above, a 404 will be returned, with no content. Similarly, if you try to access one of the above URL's with methods which are not the ones described, a 403 will be returned, with no content.
 
-There exists an endpoint for the devices resources, all, which is to be used when the client wants to know all the devices registered under a user. As such, no device can have «all» as it's identifier.
+##Error codes
 
-**Definition**
+The error codes for the user service are:
 
-`GET /user/<UUID:string>/devices/all`
+`001` - Wrong password
+`002` - Unexistent user
+`003` - String is not a UUID
+`004` - No `Authorization` header
+`005` - Authorization is not `Basic`
 
-**Required Headers**
-
-`Authorization: Basic <base64 encoded password>`
-
-**Response**
-
-*Success*
-
-```json
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-    "message": "devices for user <UUID:string> fetched",
-    "devices_count": "some_number",
-    "devices": [
-        {
-            "device_name": "name",
-            "status": "open/closed",
-            "permissions": "regular/admin"
-        }
-    ]
-}
-```
-
-*Failure*
-
-```json
-HTTP/1.1 401 Unauthorized
-Content-Type: application/json
-
-{
-    "message": "bad identification. user or password not existent/matching",
-    "error": "some-code perhaps"
-}
-```
-
-## Update device status
-
-**Definition**
-
-`PUT /user/<UUID:string>/devices/<device_id:string>/<parameter:string>/<value:string>`
-
-**Required Headers**
-
-`Authorization: Basic <base64 encoded password>`
-
-**Response**
-
-*Success*
-
-```json
-HTTP/1.1 200
-
-{
-    "message": "value updated successfully"
-}
-```
-
-*Failure*
-
-```json
-HTTP/1.1 4xx
-
-{
-    "message": "failed to update resource",
-    "error": "somecode"
-}
-```
+#Comments and guidelines
 
 Provisional structure
 
