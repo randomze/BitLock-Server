@@ -1,4 +1,4 @@
-Flask==1.0.3
-Flask-RESTful==0.3.7
-pyscopg2==2.8.3
 passlib==1.7.1
+psycopg2==2.8.3
+Flask==1.1.1
+gunicorn==19.9.0

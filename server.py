@@ -4,6 +4,7 @@ import base64
 from flask import Flask, request, g, jsonify, redirect
 import json
 import psycopg2
+import uuid
 
 app = Flask(__name__)
 
@@ -37,7 +38,7 @@ def new_user():
     print(request.headers)
     data = request.json
 
-    reply = user.loginOrRegistration(connect_to_database().cursor(), data['email'], data['password'], 'yau', 'registration')
+    reply = user.loginOrRegistration(connect_to_database().cursor(), data['email'], data['password'], 'some-secret', 'registration')
 
     return jsonify({'status': 'success', 'token': reply[0], 'unique': reply[1]})
 
@@ -47,7 +48,7 @@ def get_user_token():
     print(request.json)
     data = request.json
 
-    reply = user.loginOrRegistration(connect_to_database().cursor(), data['email'], data['password'], 'yau', 'login')
+    reply = user.loginOrRegistration(connect_to_database().cursor(), data['email'], data['password'], 'some-secret', 'login')
 
     if reply:
         return jsonify({'status': 'success', 'token': reply[0], 'unique': reply[1]})
@@ -59,49 +60,85 @@ def add_device(unique_id):
     data = request.json
 
     token = request.headers['Authorization']
+    valid, message = validation.authenticate(connect_to_database().cursor(), unique_id, token, 'some-secret')
 
-    valid, message = validation.authenticate(connect_to_database().cursor(), token, 'yau')
-    
     if not valid:
         return jsonify({'status': 'failed', 'message': message})
     else:
-        if not message == unique_id:
-            return jsonify({'status': 'failed', 'message': 'token not for this user'})
-        else:
-            query = 'INSERT INTO devices(owner, identifier, master_id) VALUES (\'{}\', \'{}\', \'{}\');'.format(unique_id, data['identifier'], data['master_id'])
-            connect_to_database().cursor().execute(query)
-            return jsonify({'status': 'success', 'message': 'device added sucessfully'})
+        query = 'INSERT INTO devices(owner, identifier, master_id) VALUES (\'{}\', \'{}\', \'{}\');'.format(unique_id, data['identifier'], data['master_id'])
+        connect_to_database().cursor().execute(query)
+        return jsonify({'status': 'success', 'message': 'device added sucessfully'})
 
-@app.route('/devices/<string:unique_id>/<string:device>', methods = ['DELETE'])
+@app.route('/devices/<string:unique_id>/master', methods = ['POST'])
+def add_master(unique_id):
+    token = request.headers['Authorization']
+
+    valid, message = validation.authenticate(connect_to_database().cursor(), unique_id, token, 'some-secret')
+
+    if not valid:
+        return jsonify({'status': 'failed', 'message': message})
+    else:
+        unique_device_id = str(uuid.uuid4())
+
+        query = 'INSERT INTO master_lookup(master_id, owner) VALUES (\'{}\', \'{}\');'.format(unique_device_id, unique_id)
+        cursor = connect_to_database().cursor()
+        cursor.execute(query)
+        cursor.close()
+
+        return jsonify({'status': 'success', 'master_id': unique_device_id, 'message': 'master added sucessfully'})
+
+'''@app.route('/devices/<string:unique_id>/<string:device>', methods = ['DELETE'])
 def remove_device():
-    pass
+    pass'''
 
 @app.route('/devices/<string:unique_id>', methods = ['GET'])
 def get_devices(unique_id):
     token = request.headers['Authorization']
 
-    valid, message = validation.authenticate(connect_to_database().cursor(), token, 'yau')
+    valid, message = validation.authenticate(connect_to_database().cursor(), unique_id, token, 'some-secret')
 
     if not valid:
         return jsonify({'status': 'failed', 'message': message})
     else:
-        if not message == unique_id:
-            return jsonify({'status': 'failed', 'message': 'token not for this user'})
+        query = 'SELECT identifier FROM devices WHERE owner=\'{}\';'.format(unique_id)
+        cursor = connect_to_database().cursor()
+        cursor.execute(query)
+        devices = [x[0] for x in cursor.fetchall()]
+        return jsonify({'status': 'success', 'devices': devices})
+
+@app.route('/devices/waiting/<string:master_id>', methods = ['GET'])
+def get_device_queue(master_id):
+    cursor = connect_to_database().cursor()
+
+    query = 'SELECT message FROM masters_messages WHERE master_id=\'{}\';'.format(master_id)
+    cursor.execute(query)
+    result = cursor.fetchone()
+
+    if not result:
+        return 'DO NOTHING'
+    else:
+        return result
+
+@app.route('/devices/<string:unique_id>/<string:identifier>', methods = ['PUT'])
+def unlock_device(unique_id, identifier):
+    token = request.headers['Authorization']
+
+    valid, message = validation.authenticate(connect_to_database().cursor(), unique_id, token, 'some-secret')
+
+    if not valid:
+        return jsonify({'status': 'failed', 'message': message})
+    else:
+        query = 'SELECT master_id FROM devices WHERE owner=\'{}\', identifier=\'{}\';'.format(unique_id, identifier)
+        cursor = connect_to_database().cursor()
+        cursor.execute(query)
+        result = cursor.fetchone()
+
+        if not result:
+            cursor.close()
+            return jsonify({'status': 'failed', 'message': 'No such device for the given owner'})
         else:
-            query = 'SELECT identifier FROM devices WHERE owner=\'{}\';'.format(unique_id)
-            cursor = connect_to_database().cursor()
+            message = 'OPEN {}'.format(identifier)
+            query = 'INSERT INTO masters_messages(master_id, message) VALUES (\'{}\', \'{}\')'.format(result, message)
             cursor.execute(query)
-            devices = [x[0] for x in cursor.fetchall()]
-            return jsonify({'status': 'success', 'devices': devices})
-
-@app.route('/devices/waiting/<string:device_unique_id>', methods = ['GET'])
-def get_device_queue(device_unique_id):
-    pass
-
-@app.route('/devices/<string:unique_id>/<string:device>', methods = ['PUT'])
-def unlock_device():
-    pass
-
-
-if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
+            cursor.close()
+            return jsonify({'status': 'success', 'message': 'Door opening'})
