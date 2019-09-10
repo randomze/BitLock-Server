@@ -5,16 +5,15 @@ from flask import Flask, request, g, jsonify, redirect
 import json
 import psycopg2
 import uuid
+import os
+
+DATABASE_URL = os.environ['DATABASE_URL']
 
 app = Flask(__name__)
 
 def connect_to_database():
     if 'connection' not in g:
-        g.connection = psycopg2.connect(database = 'testdb',
-                                                     host = 'localhost',
-                                                     port = '5432',
-                                                     user = 'postgres',
-                                                     password = 'docker')
+        g.connection = psycopg2.connect(DATABASE_URL, sslmode='require')
 
     return g.connection    
 
@@ -26,12 +25,12 @@ def cleanup_connection(exception):
         connection.commit()
         connection.close()
 
-'''@app.before_request
+@app.before_request
 def enforceHttps():
     if request.headers.get('X-Forwarded-Proto') == 'http':
         url = request.url.replace('http://', 'https://', 1)
         code = 301
-        return redirect(url, code = code)'''
+        return redirect(url, code = code)
 
 @app.route('/auth/registration', methods = ['POST'])
 def new_user():
