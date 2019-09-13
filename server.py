@@ -114,8 +114,12 @@ def get_device_queue(master_id):
     result = cursor.fetchone()
 
     if not result:
+        cursor.close()
         return 'DO NOTHING'
     else:
+        query = 'UPDATE masters_messages SET message=NULL WHERE master_id=\'{}\''.format(master_id)
+        cursor.execute(query)
+        cursor.close()
         return result
 
 @app.route('/devices/<string:unique_id>/<string:identifier>', methods = ['PUT'])
@@ -137,7 +141,8 @@ def unlock_device(unique_id, identifier):
             return jsonify({'status': 'failed', 'message': 'No such device for the given owner'})
         else:
             message = 'OPEN {}'.format(identifier)
-            query = 'INSERT INTO masters_messages(master_id, message) VALUES (\'{}\', \'{}\')'.format(result, message)
+            
+            query = 'UPDATE masters_messages SET message=\'{}\' WHERE master_id=\'{}\';'.format(message, result)
             cursor.execute(query)
             cursor.close()
             return jsonify({'status': 'success', 'message': 'Door opening'})
