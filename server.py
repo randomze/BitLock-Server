@@ -142,7 +142,7 @@ def unlock_device(unique_id, identifier):
         else:
             message = 'OPEN {}'.format(identifier)
             
-            query = 'UPDATE masters_messages SET message=\'{}\' WHERE master_id=\'{}\';'.format(message, result)
+            query = 'UPDATE masters_messages SET message=\'{}\' WHERE master_id=\'{}\';'.format(message, result[0])
             cursor.execute(query)
             cursor.close()
             return jsonify({'status': 'success', 'message': 'Door opening'})
