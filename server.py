@@ -113,7 +113,7 @@ def get_device_queue(master_id):
     cursor.execute(query)
     result = cursor.fetchone()
 
-    if not result:
+    if not result or not result[0]:
         cursor.close()
         return ('DO NOTHING', 200, 'text/plain')
     else:
