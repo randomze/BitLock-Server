@@ -115,12 +115,12 @@ def get_device_queue(master_id):
 
     if not result:
         cursor.close()
-        return 'DO NOTHING'
+        return ('DO NOTHING', 200, 'text/plain')
     else:
         query = 'UPDATE masters_messages SET message=NULL WHERE master_id=\'{}\''.format(master_id)
         cursor.execute(query)
         cursor.close()
-        return result[0]
+        return (result[0], 200, 'text/plain')
 
 @app.route('/devices/<string:unique_id>/<string:identifier>', methods = ['PUT'])
 def unlock_device(unique_id, identifier):
