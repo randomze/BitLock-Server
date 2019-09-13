@@ -120,7 +120,7 @@ def get_device_queue(master_id):
         query = 'UPDATE masters_messages SET message=NULL WHERE master_id=\'{}\''.format(master_id)
         cursor.execute(query)
         cursor.close()
-        return result
+        return result[0]
 
 @app.route('/devices/<string:unique_id>/<string:identifier>', methods = ['PUT'])
 def unlock_device(unique_id, identifier):
