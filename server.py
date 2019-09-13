@@ -131,7 +131,7 @@ def unlock_device(unique_id, identifier):
     if not valid:
         return jsonify({'status': 'failed', 'message': message})
     else:
-        query = 'SELECT master_id FROM devices WHERE owner=\'{}\', identifier=\'{}\';'.format(unique_id, identifier)
+        query = 'SELECT master_id FROM devices WHERE owner=\'{}\' AND identifier=\'{}\';'.format(unique_id, identifier)
         cursor = connect_to_database().cursor()
         cursor.execute(query)
         result = cursor.fetchone()
