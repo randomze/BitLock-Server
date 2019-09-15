@@ -7,29 +7,18 @@ def authenticate(cursor, unique_id, token, secret):
     valid, data = jwt.verifyJWT(token, secret)
 
     if valid:
-        query = 'SELECT token, date_issued FROM tokens WHERE owner_unique=\'{}\';'.format(unique_id)
+        #fetch token from database
+        query = 'SELECT token FROM tokens WHERE owner_unique=\'{}\';'.format(unique_id)
         cursor.execute(query)
         query_results = cursor.fetchone()
         cursor.close()
+        #check if there is such a user
         if not query_results:
             return (False, 'owner_no_token')
         else:
-            #get the issue date for the token and if its been used yet from the database
-            dbtoken, date_issued = query_results
+            dbtoken = query_results[0]
 
-            #parse the date string into a proper date structure
-            date_issued = datetime.strptime(date_issued, "%d/%m/%y %H:%M:%S")
-
-            #do the same for the token data
-            data = json.loads(data)
-            token_date_issued = datetime.strptime(data['date_issued'], "%d/%m/%y %H:%M:%S")
-            token_unique = data['owner_unique']
-
-            #check if the token date corresponds with the database one and check if it's not been used already
-            '''if not token_date_issued == date_issued:
-                return (False, 'token_invalid_date')
-            elif not token_unique == unique_id:'''
-                
+            #check if the token for the user is the one in the database
             if not dbtoken == token:
                 return (False, 'token_different_owner')
             else:
@@ -39,25 +28,25 @@ def authenticate(cursor, unique_id, token, secret):
         return (False, 'token_bad_signature')
 
 def generateToken(cursor, unique_id, secret):
-    date_issued = datetime.now().strftime("%d/%m/%y %H:%M:%S")
-
     header = {}
     header['alg'] = 'HS256'
     header['typ'] = 'JWT'
 
     data = {}
     data['owner_unique'] = unique_id
-    data['date_issued'] = date_issued
 
+    #make the token
     token = jwt.makeJWT(json.dumps(header), json.dumps(data), secret)
 
+    #check if there is already any token for the user
     query = 'SELECT token FROM tokens WHERE owner_unique=\'{}\';'.format(unique_id)
     cursor.execute(query)
 
     result = cursor.fetchone()
 
+    #if there isnt insert it into the database otherwise replace it
     if not result:
-        query = 'INSERT INTO tokens (owner_unique, token, date_issued) VALUES (\'{}\',\'{}\', \'{}\');'.format(unique_id, token, date_issued)
+        query = 'INSERT INTO tokens (owner_unique, token) VALUES (\'{}\',\'{}\');'.format(unique_id, token)
         cursor.execute(query)
     else:
         query = 'UPDATE tokens SET token=\'{}\' WHERE owner_unique=\'{}\';'.format(token, unique_id)
