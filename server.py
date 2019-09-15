@@ -82,6 +82,9 @@ def add_master(unique_id):
         query = 'INSERT INTO master_lookup(master_id, owner) VALUES (\'{}\', \'{}\');'.format(unique_device_id, unique_id)
         cursor = connect_to_database().cursor()
         cursor.execute(query)
+
+        query = 'INSERT INTO masters_messages(master_id, message) VALUES (\'{}\', \'\');'.format(unique_device_id)
+        cursor.execute(query)
         cursor.close()
 
         return jsonify({'status': 'success', 'master_id': unique_device_id, 'message': 'master added sucessfully'})
