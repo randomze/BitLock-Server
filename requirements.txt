@@ -1,4 +1,4 @@
 passlib==1.7.1
 psycopg2==2.8.3
-Flask==1.1.1
+Flask==2.3.2
 gunicorn==19.9.0
